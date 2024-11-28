@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ua">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Віджет monobank</title>
+  <style type="text/css">
+
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+      margin: 0;
+    }
+
+    .widget {
+      display: flex;
+      align-items: center;
+      background-color: #000;
+      color: #fff;
+      border-radius: 15px;
+      padding: 20px;
+      width: 350px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .qr-code > .cat {
+      margin-top: -10px;
+      width: 90px;
+      height: 90px;
+      position: absolute;
+    }
+    .qr-code > .qr {
+      margin-top: 13px;
+      margin-left: 18px;
+      width: 50px;
+      height: 50px;
+      position: relative;
+    }
+
+    .progress-info {
+      margin-left: 30px;
+      flex-grow: 1;
+    }
+
+    h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .progress-bar-container {
+      background: linear-gradient(to right, #d8d8d8, #f0f0f0);
+      border-radius: 10px;
+      height: 15px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      background: linear-gradient(to right, #ff6b6b, #ff9a9e);
+      height: 100%;
+    }
+
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="widget">
+    <div class="qr-code">
+      <img src="qrcat.png" class="cat">
+      <img src="" class="qr" id="qrcode">
+    </div>
+    <div class="progress-info">
+      <h3 id="title"></h3>
+      <div class="progress-bar-container">
+        <div class="progress-bar" style="width: 100%;"></div>
+      </div>
+      <div class="progress-text">
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+    // jar можна отримати на сторінці генерації віджету, скопіювавши параметр longJarId з url сторінки
+    const url = "https://api.monobank.ua/bank/jar/2S9ehWkVCcYY4SdcXQw3HDHzpsCUq81d";
+
+    fetch(url)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json(); // парсимо JSON отриманий від mono
+    })
+    .then((monoApi) => {
+      // елементи прогрес бару
+      const progressBar = document.querySelector('.progress-bar');
+      const progressLeft = document.querySelector('.progress-text span:first-child');
+      const progressRight = document.querySelector('.progress-text span:last-child');
+      // задаємо заголовок
+      document.getElementById("title").innerText = monoApi.title;
+      // отримуємо накопичення банки та розраховуємо відсотки
+      const progressBarAmount = (monoApi.amount / 100);
+      const progressBarGoal = (monoApi.goal / 100);
+      const progressPercentage = (progressBarAmount / progressBarGoal) * 100;
+      // оновлюємо інформацію у прогресс барі
+      progressBar.style.width = `${progressPercentage}%`;
+      progressLeft.textContent = `${progressBarAmount.toLocaleString()} ₴, ${Math.round(progressPercentage)}%`;
+      progressRight.textContent = `${progressBarGoal.toLocaleString()} ₴`;
+      // генеруємо QR-котика
+      const data = "https://send.monobank.ua/jar/" + monoApi.jarId;
+      const qrCodeURL = `https://quickchart.io/qr?text=${encodeURIComponent(data)}&margin=0`;
+      // додаємо його у віджет
+      document.getElementById("qrcode").src = qrCodeURL;
+    })
+    .catch((error) => {
+      console.error("Помилки при запиті:", error);
+    });
+
+  </script>
+</body>
+</html>
